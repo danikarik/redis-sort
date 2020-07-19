@@ -29,7 +29,7 @@ class User
   end
 
   def to_s
-    "email: #{email}, score: #{score}, created_at: #{created_at}, updated_at: #{updated_at}"
+    "email: #{email}\t score: #{score}\t created_at: #{created_at}\t updated_at: #{updated_at}"
   end
 end
 
@@ -123,14 +123,14 @@ app_id = new_id
 
 save_app_user(conn, app_id)
 
-puts 'order by created_at...'
+puts 'Order by created_at ...'
 print(list_app_user(conn, app_id, 'created_at', 'asc'))
 
-puts "\norder by updated_at..."
+puts "\nOrder by updated_at ..."
 print(list_app_user(conn, app_id, 'updated_at', 'asc'))
 
-puts "\norder by email..."
+puts "\nOrder by email ..."
 print(list_app_user(conn, app_id, 'email', 'desc'))
 
-puts "\norder by score..."
+puts "\nOrder by score ..."
 print(list_app_user(conn, app_id, 'score', 'desc'))
