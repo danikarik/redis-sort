@@ -10,11 +10,7 @@ def new_id
 end
 
 def new_ts
-  day = rand(1..10)
-  hour = rand(1..24)
-  minute = rand(1..60)
-  second = rand(1..60)
-  (Time.now + (day * hour * minute * second)).to_i
+  (Time.now + (rand(1..10) * rand(1..24) * rand(1..60) * rand(1..60))).to_i
 end
 
 def random_score
@@ -38,8 +34,7 @@ class User
 end
 
 def save_user(conn, user)
-  index = "user:#{user.id}"
-  conn.hmset(index,
+  conn.hmset("user:#{user.id}",
              'email', user.email,
              'score', user.score,
              'created_at', user.created_at,
@@ -58,13 +53,11 @@ def load_user(conn, id)
 end
 
 def save_app_user(conn, app_id)
-  index = "app:#{app_id}:users"
-
   10.times do |i|
     user = User.new
     user.email = "user#{i}@example.com"
     save_user(conn, user)
-    conn.zadd(index, user.created_at, user.id)
+    conn.zadd("app:#{app_id}:users", user.created_at, user.id)
   end
 end
 
