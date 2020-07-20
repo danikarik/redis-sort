@@ -60,13 +60,9 @@ end
 
 def list_app_user_by_created_at(conn, app_id, direction)
   users = []
-  result = if direction == 'desc'
-             conn.zrevrange("identity:oauthapp:#{app_id}:index:users:created_at", 0, -1)
-           else
-             conn.zrange("identity:oauthapp:#{app_id}:index:users:created_at", 0, -1)
-           end
-  result.each do |id|
-    users << load_user(conn, id)
+  conn.sort("identity:oauthapp:#{app_id}:index:users:created_at", order: direction, by: 'identity:user:*->created_at').each do |id|
+    user = load_user(conn, id)
+    users << user
   end
   users
 end
@@ -91,22 +87,37 @@ end
 
 def list_app_user_by_score(conn, app_id, direction)
   users = []
-  conn.sort("identity:oauthapp:#{app_id}:index:users:created_at", order: "alpha #{direction}", by: 'identity:user:*:sorting->risk_score').each do |id|
+  conn.sort("identity:oauthapp:#{app_id}:index:users:created_at", order: "#{direction}", by: 'identity:user:*:sorting->risk_score').each do |id|
     user = load_user(conn, id)
     users << user
   end
   users
 end
 
-def list_app_user(conn, app_id, sort_by, direction)
-  if sort_by == 'created_at'
-    list_app_user_by_created_at(conn, app_id, direction)
-  elsif sort_by == 'updated_at'
-    list_app_user_by_updated_at(conn, app_id, direction)
-  elsif sort_by == 'email'
-    list_app_user_by_email(conn, app_id, direction)
-  elsif sort_by == 'score'
-    list_app_user_by_score(conn, app_id, direction)
+def list_app_user_by_joined_at(conn, app_id, direction)
+  users = []
+  result = if direction == 'desc'
+             conn.zrevrange("identity:oauthapp:#{app_id}:index:users:created_at", 0, -1)
+           else
+             conn.zrange("identity:oauthapp:#{app_id}:index:users:created_at", 0, -1)
+           end
+  result.each do |id|
+    users << load_user(conn, id)
+  end
+  users
+end
+
+def list_app_user(conn, app_id, options)
+  if options[:sort_by] == ''
+    list_app_user_by_joined_at(conn, app_id, options[:direction])
+  elsif options[:sort_by] == 'created_at'
+    list_app_user_by_created_at(conn, app_id, options[:direction])
+  elsif options[:sort_by] == 'updated_at'
+    list_app_user_by_updated_at(conn, app_id, options[:direction])
+  elsif options[:sort_by] == 'email'
+    list_app_user_by_email(conn, app_id, options[:direction])
+  elsif options[:sort_by] == 'score'
+    list_app_user_by_score(conn, app_id, options[:direction])
   end
 end
 
@@ -115,14 +126,17 @@ app_id = '0c6c0d2e-7665-48ed-b923-cd77c0a48c8f'
 puts 'Preparing user scores ...'
 prepare_scores(conn, app_id)
 
+puts 'Order by joined_at ...'
+print(list_app_user(conn, app_id, { 'sort_by': '', 'direction': 'asc' }))
+
 puts 'Order by created_at ...'
-print(list_app_user(conn, app_id, 'created_at', 'asc'))
+print(list_app_user(conn, app_id, { 'sort_by': 'created_at', 'direction': 'asc' }))
 
 puts "\nOrder by updated_at ..."
-print(list_app_user(conn, app_id, 'updated_at', 'asc'))
+print(list_app_user(conn, app_id, { 'sort_by': 'updated_at', 'direction': 'asc' }))
 
 puts "\nOrder by email ..."
-print(list_app_user(conn, app_id, 'email', 'desc'))
+print(list_app_user(conn, app_id, { 'sort_by': 'email', 'direction': 'desc' }))
 
 puts "\nOrder by score ..."
-print(list_app_user(conn, app_id, 'score', 'desc'))
+print(list_app_user(conn, app_id, { 'sort_by': 'score', 'direction': 'desc' }))
