@@ -34,7 +34,7 @@ end
 
 def prepare_scores(conn, app_id)
   conn.zrevrange("identity:oauthapp:#{app_id}:index:users:created_at", 0, -1).each do |id|
-    conn.hset("identity:user:#{id}:sorting", 'risk_score', random_score)
+    conn.hset("identity:user:#{id}:index:filters", 'risk_score', random_score)
   end
 end
 
@@ -46,7 +46,7 @@ def load_user(conn, id)
   user.created_at = data['created_at']
   user.updated_at = data['updated_at']
 
-  risk_score = conn.hget("identity:user:#{id}:sorting", 'risk_score')
+  risk_score = conn.hget("identity:user:#{id}:index:filters", 'risk_score')
   user.score = risk_score
 
   user
@@ -87,7 +87,7 @@ end
 
 def list_app_user_by_score(conn, app_id, direction)
   users = []
-  conn.sort("identity:oauthapp:#{app_id}:index:users:created_at", order: "#{direction}", by: 'identity:user:*:sorting->risk_score').each do |id|
+  conn.sort("identity:oauthapp:#{app_id}:index:users:created_at", order: "#{direction}", by: 'identity:user:*:index:filters->risk_score').each do |id|
     user = load_user(conn, id)
     users << user
   end
@@ -124,7 +124,7 @@ end
 app_id = '0c6c0d2e-7665-48ed-b923-cd77c0a48c8f'
 
 puts 'Preparing user scores ...'
-prepare_scores(conn, app_id)
+# prepare_scores(conn, app_id)
 
 puts 'Order by joined_at ...'
 print(list_app_user(conn, app_id, { 'sort_by': '', 'direction': 'asc' }))
